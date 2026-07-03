@@ -1,0 +1,15 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "pmanager"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+capabilities           = "CAPABILITY_IAM"
+confirm_changeset      = true
+resolve_s3             = true
+region                 = "ca-central-1"
+parameter_overrides    = "AllowedOrigin=*"

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "argon2": {
+    "iterations": 3,
+    "memorySize": 65536,
+    "parallelism": 1,
+    "hashLength": 32
+  },
+  "saltB64": "OL79X3TSw0bBv/S2Aj1jfA==",
+  "ivB64": "5hhA3NQoosu7ec18",
+  "ctB64": "Ps+mHQs0CtqbQHTf8DpIhkVa7jyLZIkfqFSB"
+}

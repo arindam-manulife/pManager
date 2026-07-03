@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pManager — Manage Sites</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="theme.js"></script>
+</head>
+<body>
+  <main class="app manage manage-wide">
+    <header>
+      <div class="topbar">
+        <h1>Manage Sites</h1>
+        <div class="topbar-right">
+          <div id="session-bar" class="session" hidden>
+            <span>Session expires in:</span>
+            <strong id="countdown">05:00</strong>
+            <button id="lock-btn" type="button">Log off</button>
+          </div>
+          <button id="theme-toggle" type="button" class="theme-toggle">Dark mode</button>
+        </div>
+      </div>
+      <p class="subtitle">
+        Organize sites by category. Changes are saved through the API and
+        cached locally for offline read-only access.
+      </p>
+    </header>
+
+    <!-- Master password gate -->
+    <section id="unlock-section" class="card">
+      <h2>Unlock</h2>
+      <label for="master">Master password</label>
+      <div class="row">
+        <input
+          type="password"
+          id="master"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Enter your master password"
+        />
+      </div>
+      <button id="unlock-btn" class="primary">Unlock session</button>
+      <p id="unlock-status" class="hint" hidden></p>
+      <p id="unlock-error" class="error" hidden></p>
+    </section>
+
+    <!-- Main content (hidden until unlocked) -->
+    <div id="manage-section" hidden>
+    <p id="verify-banner" class="verify-banner" hidden></p>
+
+    <section class="card">
+      <div class="tabs-wrapper">
+        <nav id="category-tabs" class="tabs" aria-label="Categories"></nav>
+        <div class="tab-actions">
+          <button id="add-site-btn" type="button" class="primary" title="Add a new site">+ Add Site</button>
+          <button id="new-cat-btn" type="button" title="Add a new category">+ New Category</button>
+          <form id="new-cat-form" hidden autocomplete="off">
+            <input id="new-cat-input" type="text" placeholder="Category name" />
+            <button type="submit" class="primary">Add</button>
+            <button type="button" id="new-cat-cancel">Cancel</button>
+          </form>
+        </div>
+      </div>
+      <p id="data-status" class="data-status"></p>
+    </section>
+
+    <section id="add-card" class="card" hidden>
+      <h2 id="add-heading">Add a new site</h2>
+      <form id="add-form" autocomplete="off">
+        <div class="grid grid-4">
+          <div>
+            <label for="add-name">Name</label>
+            <input id="add-name" type="text" placeholder="e.g. GitHub" required />
+          </div>
+          <div>
+            <label for="add-category">Category</label>
+            <input id="add-category" type="text" list="categories-list"
+                   placeholder="e.g. Work" required />
+          </div>
+          <div>
+            <label for="add-unique">Unique string (salt)</label>
+            <input id="add-unique" type="text" placeholder="e.g. gh-2024-a1b2" required />
+          </div>
+          <div>
+            <label for="add-length">Length</label>
+            <input id="add-length" type="number" min="4" max="64" value="20" />
+          </div>
+        </div>
+
+        <fieldset class="classes">
+          <legend>Character classes</legend>
+          <label class="check"><input type="checkbox" data-cls="lower"  checked /> lowercase (a–z)</label>
+          <label class="check"><input type="checkbox" data-cls="upper"  checked /> UPPERCASE (A–Z)</label>
+          <label class="check"><input type="checkbox" data-cls="number" checked /> numbers (0–9)</label>
+          <label class="check"><input type="checkbox" data-cls="symbol" checked /> symbols (!@#…)</label>
+        </fieldset>
+
+        <div class="note-field">
+          <label for="add-note">Note <span class="muted-small">(optional)</span></label>
+          <textarea id="add-note" rows="2" maxlength="500"
+                    placeholder="e.g. username, recovery-email hint, or which account this is for"></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="primary">Add site</button>
+          <button type="button" id="add-cancel">Cancel</button>
+          <p id="add-error" class="error" hidden></p>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="vault-header">
+        <h2 id="list-heading">Sites (<span id="site-count">0</span>)</h2>
+      </div>
+      <div id="site-list"></div>
+      <p id="empty-hint" class="hint" hidden>No sites in this category yet. Click <strong>+ Add Site</strong> above to create one.</p>
+    </section>
+
+    <datalist id="categories-list"></datalist>
+
+    <footer>
+      <small>
+        Site config is stored server-side via the API. Only a read-only cache
+        of the last successful load is kept in this browser's localStorage.
+      </small>
+    </footer>
+  </main>
+
+    </div> <!-- /manage-section -->
+
+  <!-- Compact row for the dashboard table -->
+  <template id="site-row-template">
+    <tr class="site-row">
+      <td class="site-name-cell"></td>
+      <td class="site-modified"></td>
+      <td class="site-actions">
+        <button type="button" class="edit-btn" data-action="edit">Edit</button>
+      </td>
+    </tr>
+  </template>
+
+  <!-- One section (heading + table) per category -->
+  <template id="category-section-template">
+    <div class="category-section">
+      <div class="category-section-head">
+        <h3 class="category-section-title"></h3>
+        <span class="category-section-count muted-small"></span>
+      </div>
+      <table class="site-table">
+        <tbody></tbody>
+      </table>
+    </div>
+  </template>
+
+  <!-- Edit modal -->
+  <div id="edit-modal" class="modal" hidden>
+    <div class="modal-backdrop" data-action="close"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+      <header class="modal-header">
+        <h2 id="editor-title">Edit site</h2>
+        <button type="button" class="modal-close" data-action="close" aria-label="Close">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="grid grid-4">
+          <div>
+            <label for="edit-name">Name</label>
+            <input id="edit-name" type="text" />
+          </div>
+          <div>
+            <label for="edit-category">Category</label>
+            <select id="edit-category"></select>
+          </div>
+          <div>
+            <label for="edit-unique">Unique string</label>
+            <div class="unique-cell">
+              <input id="edit-unique" type="text" />
+              <button type="button" class="icon-btn" data-action="edit-regen"
+                      title="Generate a new unique string (auto-saves)">↻</button>
+              <button type="button" class="icon-btn" data-action="edit-history"
+                      title="Show previous unique strings">⋯</button>
+              <div id="edit-history-menu" class="history-menu" hidden></div>
+            </div>
+          </div>
+          <div>
+            <label for="edit-length">Length</label>
+            <input id="edit-length" type="number" min="4" max="64" />
+          </div>
+        </div>
+
+        <fieldset class="classes">
+          <legend>Character classes</legend>
+          <label class="check"><input type="checkbox" data-edit-cls="lower"  /> lowercase (a–z)</label>
+          <label class="check"><input type="checkbox" data-edit-cls="upper"  /> UPPERCASE (A–Z)</label>
+          <label class="check"><input type="checkbox" data-edit-cls="number" /> numbers (0–9)</label>
+          <label class="check"><input type="checkbox" data-edit-cls="symbol" /> symbols (!@#…)</label>
+        </fieldset>
+
+        <div class="note-field">
+          <label for="edit-note">Note <span class="muted-small">(optional)</span></label>
+          <textarea id="edit-note" rows="3" maxlength="500"
+                    placeholder="e.g. username, recovery-email hint, or which account this is for"></textarea>
+        </div>
+
+        <p id="edit-error" class="error" hidden></p>
+      </div>
+
+      <footer class="modal-footer" id="edit-footer-main">
+        <div class="modal-footer-left">
+          <button type="button" data-action="save" class="primary">Save</button>
+          <button type="button" data-action="cancel">Cancel</button>
+        </div>
+        <button type="button" data-action="delete" class="danger">Delete</button>
+      </footer>
+
+      <footer class="modal-footer modal-footer-confirm" id="edit-footer-confirm" hidden>
+        <p class="modal-confirm-msg" id="edit-confirm-msg"></p>
+        <div class="modal-confirm-actions">
+          <button type="button" data-action="confirm-no">Cancel</button>
+          <button type="button" data-action="confirm-yes" id="edit-confirm-yes" class="primary">Confirm</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="storage.js"></script>
+  <script src="../vault/argon2.umd.min.js"></script>
+  <script src="../vault/derive.js"></script>
+  <script src="manage.js"></script>
+</body>
+</html>

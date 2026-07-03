@@ -1,0 +1,27 @@
+[
+  {
+    "name": "GitHub",
+    "category": "Development",
+    "unique": "huz78eznmu5qvrtc",
+    "length": 20,
+    "classes": {
+      "lower": true,
+      "upper": true,
+      "number": true,
+      "symbol": true
+    },
+    "note": "",
+    "uniqueCreatedAt": "2026-07-03T21:24:15.905Z",
+    "lastModifiedAt": "2026-07-03T21:24:19.108Z",
+    "history": [
+      {
+        "value": "9jpmgta63wh8xxde",
+        "createdAt": "2026-07-03T21:24:13.506Z"
+      },
+      {
+        "value": "gh-2024-a1b2",
+        "createdAt": null
+      }
+    ]
+  }
+]

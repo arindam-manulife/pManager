@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  pManager serverless backend.
+  API Gateway (HTTP API) → Lambda → DynamoDB
+
+# Deploy:
+#   sam build
+#   sam deploy --guided          # first time (saves samconfig.toml)
+#   sam deploy                   # subsequent deploys
+
+# ---- Parameters -------------------------------------------------------------
+
+Parameters:
+  AllowedOrigin:
+    Type: String
+    Default: "*"
+    Description: >
+      CORS allowed origin. Use "*" while developing locally.
+      Set to the exact URL of your frontend in production
+      (e.g. https://mysite.example.com).
+
+# ---- Globals ----------------------------------------------------------------
+
+Globals:
+  Function:
+    Runtime: nodejs24.x
+    Timeout: 15
+    MemorySize: 256
+    Architectures: [arm64]   # Graviton2 — cheaper + faster for simple workloads
+
+# ---- Resources --------------------------------------------------------------
+
+Resources:
+
+  # ---------- DynamoDB -------------------------------------------------------
+  PManagerTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain        # keeps data if the stack is deleted
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub "pmanager-${AWS::StackName}"
+      BillingMode: PAY_PER_REQUEST  # no provisioned capacity needed for personal use
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true            # encryption at rest (AWS-managed key)
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true   # 35-day recovery window
+
+  # ---------- Lambda ---------------------------------------------------------
+  PManagerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "pmanager-api-${AWS::StackName}"
+      CodeUri: lambda/
+      Handler: handler.handler
+      Description: pManager API — sites + vault-meta CRUD
+      Environment:
+        Variables:
+          TABLE_NAME:     !Ref PManagerTable
+          ALLOWED_ORIGIN: !Ref AllowedOrigin
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PManagerTable
+      Events:
+        ApiSites:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref PManagerApi
+            Path: /api/{proxy+}
+            Method: ANY
+
+  # ---------- API Gateway (HTTP API v2) --------------------------------------
+  PManagerApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: "$default"
+      Description: pManager HTTP API
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedOrigin
+        AllowMethods:
+          - GET
+          - PUT
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+        MaxAge: 600
+
+# ---- Outputs ----------------------------------------------------------------
+
+Outputs:
+  ApiUrl:
+    Description: >
+      API base URL — paste this as `apiBase` in manager/config.js
+      and vault/config.js, replacing http://127.0.0.1:3001
+    Value: !Sub "https://${PManagerApi}.execute-api.${AWS::Region}.amazonaws.com"
+
+  FunctionName:
+    Description: Lambda function name
+    Value: !Ref PManagerFunction
+
+  TableName:
+    Description: DynamoDB table name
+    Value: !Ref PManagerTable

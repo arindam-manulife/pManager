@@ -1,0 +1,36 @@
+meta {
+  name: Replace Sites
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/api/sites
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  [
+    {
+      "name": "GitHub",
+      "category": "Development",
+      "unique": "gh-2024-a1b2",
+      "length": 20,
+      "classes": {
+        "lower": true,
+        "upper": true,
+        "number": true,
+        "symbol": true
+      },
+      "note": "",
+      "uniqueCreatedAt": null,
+      "lastModifiedAt": null,
+      "history": []
+    }
+  ]
+}

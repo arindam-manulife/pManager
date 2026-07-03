@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pManager — Deterministic Password Vault</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="theme.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="topbar">
+        <h1>pManager</h1>
+        <button id="theme-toggle" type="button" class="theme-toggle">Dark mode</button>
+      </div>
+      <p class="subtitle">Your master password never leaves memory. Session expires in 5 minutes.</p>
+    </header>
+
+    <!-- Master password gate -->
+    <section id="unlock-section" class="card">
+      <h2>Unlock</h2>
+      <label for="master">Master password</label>
+      <div class="row">
+        <input
+          type="password"
+          id="master"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Enter your master password"
+        />
+      </div>
+      <button id="unlock-btn" class="primary">Unlock session</button>
+      <p id="unlock-status" class="hint" hidden></p>
+      <p id="unlock-error" class="error" hidden></p>
+    </section>
+
+    <!-- Vault view -->
+    <section id="vault-section" class="card" hidden>
+      <div class="vault-header">
+        <h2>Vault</h2>
+        <div class="session">
+          <span>Session:</span>
+          <strong id="countdown">05:00</strong>
+          <button id="lock-btn" type="button">Lock</button>
+        </div>
+      </div>
+
+      <p id="verify-banner" class="verify-banner" hidden></p>
+
+      <label for="category-select">Category</label>
+      <div class="row">
+        <select id="category-select"></select>
+      </div>
+
+      <label for="site-select">Site</label>
+      <div class="row">
+        <select id="site-select"></select>
+        <button id="generate-btn" class="primary" type="button">Generate</button>
+      </div>
+      <p id="data-status" class="data-status"></p>
+
+      <div id="site-note" class="site-note" hidden></div>
+
+      <div class="output" hidden id="output-block">
+        <label for="generated">Generated password</label>
+        <div class="row">
+          <input type="password" id="generated" readonly />
+          <button id="toggle-generated" type="button" title="Show/hide">👁</button>
+          <button id="copy-btn" type="button">Copy</button>
+        </div>
+        <p id="unique-created" class="hint"></p>
+        <p id="copy-status" class="hint"></p>
+      </div>
+    </section>
+
+    <footer>
+      <small>
+        Master password is held in JS memory only and auto-wiped after 5 minutes
+        of inactivity, on lock, or on tab close. Site list is fetched from the API.
+      </small>
+    </footer>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="storage.js"></script>
+  <script src="argon2.umd.min.js"></script>
+  <script src="derive.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
