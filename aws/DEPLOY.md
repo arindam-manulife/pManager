@@ -1,17 +1,44 @@
 # AWS Deployment Guide
 
-Deploys the pManager serverless backend: **API Gateway (HTTP API) → Lambda → DynamoDB**.
+Full-stack deployment for pManager:
+- **Backend** — API Gateway (HTTP API v2) → Lambda (Node.js 24, arm64) → DynamoDB
+- **Frontend** — S3 + CloudFront (HTTPS) for Manager and Vault apps
+
+---
+
+## Deployed Resources (current stack: `pmanager`, region: `ca-central-1`)
+
+| Resource | Value |
+|----------|-------|
+| API URL | `https://5paq7xm6v5.execute-api.ca-central-1.amazonaws.com` |
+| Lambda Function | `pmanager-api-pmanager` |
+| DynamoDB Table | `pmanager-pmanager` |
+| Manager S3 Bucket | `pmanager-manager-864138843762-pmanager` |
+| Vault S3 Bucket | `pmanager-vault-864138843762-pmanager` |
+| **Manager App URL** | **https://d2xizde5tcfavk.cloudfront.net** |
+| **Vault App URL** | **https://d28qqey4ujtj4r.cloudfront.net** |
 
 ---
 
 ## Prerequisites
 
-| Tool | Purpose | Install |
-|------|---------|---------|
-| [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) | AWS authentication | `brew install awscli` |
-| [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) | Build & deploy | `brew install aws-sam-cli` |
-| Node.js 20+ | Lambda runtime dependency install | `brew install node` |
-| Docker (optional) | SAM local testing | `brew install --cask docker` |
+| Tool | Install |
+|------|---------|
+| AWS CLI v2 | `brew install awscli` |
+| AWS SAM CLI | `brew install aws-sam-cli` |
+| Node.js 20+ | `brew install node` |
+
+### macOS SSL fix (one-time)
+
+The AWS CLI on macOS may fail with `SSL: CERTIFICATE_VERIFY_FAILED`. Fix by exporting system certificates:
+
+```bash
+security find-certificate -a -p /Library/Keychains/System.keychain > /tmp/aws-ca-bundle.pem
+security find-certificate -a -p /System/Library/Keychains/SystemRootCertificates.keychain >> /tmp/aws-ca-bundle.pem
+echo "ca_bundle = /tmp/aws-ca-bundle.pem" >> ~/.aws/config
+```
+
+> `/tmp/aws-ca-bundle.pem` is cleared on reboot — re-run the first two lines after a restart.
 
 ---
 
@@ -21,9 +48,14 @@ Deploys the pManager serverless backend: **API Gateway (HTTP API) → Lambda →
 aws configure
 ```
 
-Enter your **Access Key ID**, **Secret Access Key**, default region (`ca-central-1`), and output format (`json`).
+| Prompt | Value |
+|--------|-------|
+| AWS Access Key ID | your IAM access key |
+| AWS Secret Access Key | your IAM secret |
+| Default region | `ca-central-1` |
+| Default output format | `json` |
 
-Verify access:
+Verify:
 
 ```bash
 aws sts get-caller-identity
@@ -31,77 +63,49 @@ aws sts get-caller-identity
 
 ---
 
-## Step 2 — Install Lambda dependencies
-
-From the repo root:
+## Step 2 — Build
 
 ```bash
-cd aws/lambda
-npm install
-cd ../..
+sam build --template-file aws/template.yaml
 ```
+
+> The Lambda has no npm dependencies — the `package.json file not found` warning is safe to ignore.
 
 ---
 
-## Step 3 — Build the SAM application
+## Step 3 — Deploy (first time)
 
 ```bash
-cd aws
-sam build
+sam deploy --guided \
+  --template-file aws/template.yaml \
+  --config-file aws/samconfig.toml
 ```
 
-SAM compiles the Lambda code and packages it under `.aws-sam/build/`.
+Accept the defaults at every prompt. After completion the stack outputs print the API URL, S3 bucket names, and CloudFront URLs.
+
+> CloudFront distributions take **~10 minutes** to propagate globally on first deploy.
 
 ---
 
-## Step 4 — Deploy (first time)
-
-Run the guided deploy to create `samconfig.toml` (already committed with defaults):
+## Step 4 — Upload frontend files to S3
 
 ```bash
-sam deploy --guided
+aws s3 sync manager/ s3://pmanager-manager-864138843762-pmanager --delete --exclude ".DS_Store"
+aws s3 sync vault/   s3://pmanager-vault-864138843762-pmanager   --delete --exclude ".DS_Store"
 ```
 
-Prompted values — press **Enter** to accept the defaults shown in brackets:
+Or use the convenience script (build + deploy + sync in one step):
 
-| Prompt | Default / recommended value |
-|--------|-----------------------------|
-| Stack Name | `pmanager` |
-| AWS Region | `ca-central-1` |
-| `AllowedOrigin` | `*` (for local dev) or your frontend URL in production |
-| Confirm changeset before deploy | `Y` |
-| Allow SAM to create IAM roles | `Y` |
-| Save arguments to `samconfig.toml` | `Y` |
-
-> **Production tip:** set `AllowedOrigin` to the exact URL serving your frontend (e.g. `https://mysite.example.com`) to restrict CORS.
+```bash
+bash aws/deploy-frontend.sh
+```
 
 ---
 
-## Step 5 — Note the stack outputs
+## Step 5 — Update frontend config (if API URL changes)
 
-After a successful deploy SAM prints the stack outputs:
+Edit **both** `manager/config.js` and `vault/config.js`:
 
-```
-Key                 ApiUrl
-Description         API base URL
-Value               https://<api-id>.execute-api.ca-central-1.amazonaws.com
-
-Key                 FunctionName
-Value               pmanager-api-pmanager
-
-Key                 TableName
-Value               pmanager-pmanager
-```
-
-Copy the **ApiUrl** value — you will need it in the next step.
-
----
-
-## Step 6 — Update frontend configuration
-
-Replace the `apiBase` value in **both** frontend config files:
-
-**`manager/config.js`**
 ```js
 window.PM_CONFIG = {
   apiBase: "https://<api-id>.execute-api.ca-central-1.amazonaws.com",
@@ -109,24 +113,20 @@ window.PM_CONFIG = {
 };
 ```
 
-**`vault/config.js`**
-```js
-window.PM_CONFIG = {
-  apiBase: "https://<api-id>.execute-api.ca-central-1.amazonaws.com",
-  useLocalCache: true,
-};
-```
+Then re-sync to S3 (Step 4).
 
 ---
 
 ## Subsequent deployments
 
-Once `samconfig.toml` exists, deploy without the wizard:
-
 ```bash
-cd aws
-sam build && sam deploy
+sam build --template-file aws/template.yaml && \
+sam deploy --template-file aws/template.yaml \
+           --config-file aws/samconfig.toml \
+           --no-confirm-changeset
 ```
+
+Then re-sync frontend files if any changed (Step 4).
 
 ---
 
@@ -134,23 +134,50 @@ sam build && sam deploy
 
 | Command | Description |
 |---------|-------------|
-| `sam build` | Re-package Lambda code |
-| `sam deploy` | Deploy / update the CloudFormation stack |
 | `sam logs -n pmanager-api-pmanager --tail` | Stream live Lambda logs |
-| `sam local start-api` | Run API locally via Docker |
-| `aws cloudformation describe-stacks --stack-name pmanager` | View stack status |
-| `aws cloudformation delete-stack --stack-name pmanager` | Delete stack (DynamoDB table is **retained**) |
+| `aws cloudformation describe-stacks --stack-name pmanager` | View stack status and all outputs |
+| `aws s3 ls s3://pmanager-manager-864138843762-pmanager` | List uploaded manager files |
+| `aws cloudfront create-invalidation --distribution-id <id> --paths "/*"` | Bust CloudFront cache after update |
 
 ---
 
-## Stack resources created
+## Stack resources
 
-| Resource | AWS Type | Notes |
-|----------|----------|-------|
-| `pmanager-pmanager` | DynamoDB Table | `DeletionPolicy: Retain` — survives stack deletion |
-| `pmanager-api-pmanager` | Lambda Function | Node.js 24.x, arm64 (Graviton2) |
-| HTTP API | API Gateway v2 | Routes `/api/{proxy+}` to Lambda |
-| Execution Role | IAM Role | DynamoDB CRUD permissions only |
+| Logical ID | AWS Type | Notes |
+|------------|----------|-------|
+| `PManagerTable` | DynamoDB Table | `DeletionPolicy: Retain` — survives stack deletion |
+| `PManagerFunction` | Lambda Function | Node.js 24.x, arm64 (Graviton2), 256 MB |
+| `PManagerApi` | API Gateway v2 HTTP API | Routes `/api/{proxy+}` to Lambda |
+| `PManagerManagerBucket` | S3 Bucket | Hosts Manager frontend |
+| `PManagerVaultBucket` | S3 Bucket | Hosts Vault frontend |
+| `PManagerOAC` | CloudFront OAC | Grants CloudFront-only access to S3 buckets |
+| `PManagerManagerDistribution` | CloudFront Distribution | HTTPS for Manager app |
+| `PManagerVaultDistribution` | CloudFront Distribution | HTTPS for Vault app |
+| `PManagerFunctionRole` | IAM Role | DynamoDB CRUD permissions only |
+
+---
+
+## Known issues & fixes
+
+### `sam build` — command not found
+SAM CLI not installed. Run `brew install aws-sam-cli`.
+
+### `Unable to locate credentials`
+AWS CLI not configured. Run `aws configure` with your IAM access key.
+
+### `SSL: CERTIFICATE_VERIFY_FAILED`
+macOS system certificates not trusted. See the macOS SSL fix in Prerequisites above.
+
+### `Cannot reach API: Failed to fetch` (browser)
+The HTML is being opened as a `file://` URL. Browsers send `Origin: null` for file:// pages, which API Gateway blocks even with `AllowOrigins: *`. Use the CloudFront URLs, or run a local server:
+```bash
+python3 -m http.server 8080
+# Manager: http://localhost:8080/manager/
+# Vault:   http://localhost:8080/vault/
+```
+
+### `Cannot read properties of undefined (reading 'verifyMaster')` — Manager only
+`derive.js` was referenced via `../vault/derive.js` — a relative path that breaks when served from a separate CloudFront distribution. Fixed by copying `argon2.umd.min.js` and `derive.js` into `manager/` and updating the script tags in `manager/index.html`.
 
 ---
 
@@ -160,4 +187,4 @@ sam build && sam deploy
 aws cloudformation delete-stack --stack-name pmanager
 ```
 
-> The DynamoDB table (`pmanager-pmanager`) is **not** deleted because of `DeletionPolicy: Retain`. Delete it manually in the AWS Console if you no longer need the data.
+> The DynamoDB table is **not** deleted (`DeletionPolicy: Retain`). Delete it manually in the AWS Console if you no longer need the data.

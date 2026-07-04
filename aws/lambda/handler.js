@@ -32,7 +32,7 @@ function corsHeaders() {
 function respond(status, body) {
   return {
     statusCode: status,
-    headers: { "Content-Type": "application/json; charset=utf-8", ...corsHeaders() },
+    headers: { "Content-Type": "application/json; charset=utf-8" },
     body: JSON.stringify(body),
   };
 }
@@ -156,7 +156,7 @@ exports.handler = async (event) => {
   const path   = event.rawPath || event.path || "/";
 
   if (method === "OPTIONS") {
-    return { statusCode: 204, headers: corsHeaders(), body: "" };
+    return { statusCode: 204, headers: {}, body: "" };
   }
 
   const body = event.body

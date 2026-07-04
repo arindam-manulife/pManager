@@ -20,6 +20,20 @@ Parameters:
       Set to the exact URL of your frontend in production
       (e.g. https://mysite.example.com).
 
+  AllowedIPs:
+    Type: String
+    Default: "unused"
+    Description: >-
+      Deprecated — no longer used. Kept to avoid changeset errors on existing
+      stacks that have this parameter. Set ApiToken instead.
+
+  ApiToken:
+    Type: String
+    NoEcho: true
+    Description: >-
+      Hex token derived from the master password via aws/gen-token.js.
+      Run: node aws/gen-token.js "your-master-password" and paste the output here.
+
 # ---- Globals ----------------------------------------------------------------
 
 Globals:
@@ -52,6 +66,27 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true   # 35-day recovery window
 
+  # ---------- IP Allowlist Authorizer Lambda --------------------------------
+  PManagerAuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "pmanager-authorizer-${AWS::StackName}"
+      CodeUri: lambda/
+      Handler: authorizer.handler
+      Description: pManager Bearer token authorizer
+      Environment:
+        Variables:
+          API_TOKEN: !Ref ApiToken
+
+  # ---------- Permission for API Gateway to invoke the authorizer -----------
+  PManagerAuthorizerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PManagerAuthorizerFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PManagerApi}/*"
+
   # ---------- Lambda ---------------------------------------------------------
   PManagerFunction:
     Type: AWS::Serverless::Function
@@ -81,16 +116,121 @@ Resources:
     Properties:
       StageName: "$default"
       Description: pManager HTTP API
+      Auth:
+        DefaultAuthorizer: IPAuthorizer
+        Authorizers:
+          IPAuthorizer:
+            AuthorizerPayloadFormatVersion: "2.0"
+            EnableSimpleResponses: true
+            FunctionArn: !GetAtt PManagerAuthorizerFunction.Arn
+            Identity:
+              ReauthorizeEvery: 0   # no caching — always re-check IP
       CorsConfiguration:
         AllowOrigins:
-          - !Ref AllowedOrigin
+          - "*"
         AllowMethods:
           - GET
           - PUT
           - OPTIONS
         AllowHeaders:
           - Content-Type
+          - Authorization
         MaxAge: 600
+
+  # ---------- S3 Buckets for frontend ----------------------------------------
+  PManagerManagerBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "pmanager-manager-${AWS::AccountId}-${AWS::StackName}"
+
+  PManagerVaultBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "pmanager-vault-${AWS::AccountId}-${AWS::StackName}"
+
+  # ---------- CloudFront Origin Access Control --------------------------------
+  PManagerOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "pmanager-oac-${AWS::StackName}"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ---------- S3 Bucket Policies (grant CloudFront OAC read access) ----------
+  PManagerManagerBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PManagerManagerBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${PManagerManagerBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${PManagerManagerDistribution}"
+
+  PManagerVaultBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PManagerVaultBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${PManagerVaultBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${PManagerVaultDistribution}"
+
+  # ---------- CloudFront Distributions ----------------------------------------
+  PManagerManagerDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt PManagerManagerBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt PManagerOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # CachingDisabled
+          AllowedMethods:
+            - GET
+            - HEAD
+
+  PManagerVaultDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt PManagerVaultBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt PManagerOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # CachingDisabled
+          AllowedMethods:
+            - GET
+            - HEAD
 
 # ---- Outputs ----------------------------------------------------------------
 
@@ -108,3 +248,19 @@ Outputs:
   TableName:
     Description: DynamoDB table name
     Value: !Ref PManagerTable
+
+  ManagerBucket:
+    Description: "S3 bucket for Manager frontend — sync with: aws s3 sync manager/ s3://<value> --delete"
+    Value: !Ref PManagerManagerBucket
+
+  VaultBucket:
+    Description: "S3 bucket for Vault frontend — sync with: aws s3 sync vault/ s3://<value> --delete"
+    Value: !Ref PManagerVaultBucket
+
+  ManagerUrl:
+    Description: Manager app URL (CloudFront — takes ~10 min to propagate after first deploy)
+    Value: !Sub "https://${PManagerManagerDistribution.DomainName}"
+
+  VaultUrl:
+    Description: Vault app URL (CloudFront — takes ~10 min to propagate after first deploy)
+    Value: !Sub "https://${PManagerVaultDistribution.DomainName}"

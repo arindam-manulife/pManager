@@ -162,12 +162,20 @@
     setUnlockBusy(true, "Deriving key (Argon2id, this takes a moment)…");
 
     try {
+      // Derive the API Bearer token from the master password (fast, PBKDF2)
+      // and register it so all subsequent API calls are authenticated.
+      const apiToken = await window.PMDerive.deriveApiToken(pwd);
+      window.PMStore.setApiToken(apiToken);
+
       let meta;
       try {
         meta = await window.PMStore.loadMeta();
       } catch (err) {
         setUnlockBusy(false);
-        showUnlockError(`Cannot reach API: ${err.message}`);
+        const msg = /403/.test(err.message)
+          ? "Wrong master password."
+          : `Cannot reach API: ${err.message}`;
+        showUnlockError(msg);
         return;
       }
 
@@ -213,6 +221,11 @@
 
       scheduleExpiry();
       startCountdown();
+
+      // Reload sites now that the API token is set (the init() call happened
+      // before unlock, so had no auth token and got 403).
+      await loadSites();
+      refreshLists();
     } catch (err) {
       setUnlockBusy(false);
       showUnlockError(err.message || "Unlock failed.");

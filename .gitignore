@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Test reports (generated)
+tests/reports/
+.AppleDouble
+.LSOverride
+
+# SAM build output
+.aws-sam/
+
+# AWS credentials / config (never commit these)
+.env
+.env.*
+*.pem
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Node (mock-api)
+node_modules/

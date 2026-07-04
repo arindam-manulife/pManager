@@ -1,0 +1,37 @@
+{
+  "name": "pmanager-tests",
+  "private": true,
+  "description": "Automated test suite for pManager",
+  "scripts": {
+    "test": "jest --forceExit --testPathPattern=unit",
+    "test:unit": "jest --forceExit --testPathPattern=unit",
+    "test:e2e": "jest --forceExit --testPathPattern=e2e",
+    "test:all": "jest --forceExit",
+    "test:report": "jest --forceExit && open reports/test-report.html",
+    "test:report:all": "jest --forceExit && open reports/test-report.html"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/unit/**/*.test.js", "**/e2e/**/*.test.js"],
+    "testTimeout": 30000,
+    "verbose": true,
+    "reporters": [
+      "default",
+      [
+        "jest-html-reporters",
+        {
+          "publicPath": "./reports",
+          "filename": "test-report.html",
+          "openReport": false,
+          "pageTitle": "pManager Test Dashboard",
+          "expand": true,
+          "testCommand": "cd tests && npm test"
+        }
+      ]
+    ]
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-html-reporters": "^3.1.7"
+  }
+}

@@ -14,10 +14,18 @@
 
   function apply(theme) {
     root.dataset.theme = theme;
-    document.querySelectorAll("#theme-toggle, [data-theme-toggle]").forEach((btn) => {
-      btn.textContent = theme === "dark" ? "Light mode" : "Dark mode";
-      btn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
-      btn.title = `Switch to ${theme === "dark" ? "light" : "dark"} mode`;
+    const isDark = theme === "dark";
+    document.querySelectorAll("#theme-toggle, [data-theme-toggle]").forEach((el) => {
+      const checkbox = el.querySelector(".theme-toggle-check");
+      if (checkbox) {
+        checkbox.checked = isDark;
+      } else if (el.nodeName === "BUTTON") {
+        // Legacy fallback — never overwrite a label's child nodes.
+        el.textContent = isDark ? "Light mode" : "Dark mode";
+        el.setAttribute("aria-pressed", isDark ? "true" : "false");
+      }
+      el.setAttribute("aria-label", `Switch to ${isDark ? "light" : "dark"} mode`);
+      el.title = `Switch to ${isDark ? "light" : "dark"} mode`;
     });
   }
 
@@ -31,10 +39,15 @@
   apply(preferred());
 
   function wire() {
-    document.querySelectorAll("#theme-toggle, [data-theme-toggle]").forEach((btn) => {
-      if (btn.dataset.themeBound === "1") return;
-      btn.dataset.themeBound = "1";
-      btn.addEventListener("click", toggle);
+    document.querySelectorAll("#theme-toggle, [data-theme-toggle]").forEach((el) => {
+      if (el.dataset.themeBound === "1") return;
+      el.dataset.themeBound = "1";
+      const checkbox = el.querySelector(".theme-toggle-check");
+      if (checkbox) {
+        checkbox.addEventListener("change", toggle);
+      } else {
+        el.addEventListener("click", toggle);
+      }
     });
     apply(root.dataset.theme || preferred());
   }

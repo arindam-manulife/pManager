@@ -12,6 +12,12 @@
   const CACHE_KEY   = "pmanager.sites.cache.v1";
   const CLASS_KEYS  = ["lower", "upper", "number", "symbol"];
 
+  let _apiToken = null;
+  function setApiToken(t) { _apiToken = t; }
+  function authHeader() {
+    return _apiToken ? { Authorization: "Bearer " + _apiToken } : {};
+  }
+
   function config() {
     return window.PM_CONFIG || { apiBase: "", useLocalCache: true };
   }
@@ -121,7 +127,7 @@
     try {
       const res = await fetch(apiUrl("/api/sites"), {
         method: "GET",
-        headers: { Accept: "application/json" },
+        headers: { Accept: "application/json", ...authHeader() },
         cache: "no-store",
       });
       if (!res.ok) throw new Error(`API responded ${res.status}`);
@@ -141,7 +147,7 @@
     const clean = (sites || []).map(normalize).filter(Boolean);
     const res = await fetch(apiUrl("/api/sites"), {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeader() },
       body: JSON.stringify(clean),
     });
     if (!res.ok) {
@@ -164,7 +170,7 @@
   async function loadMeta() {
     const res = await fetch(apiUrl("/api/vault-meta"), {
       method: "GET",
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...authHeader() },
       cache: "no-store",
     });
     if (!res.ok) throw new Error(`API responded ${res.status}`);
@@ -179,7 +185,7 @@
   async function saveMeta(meta) {
     const res = await fetch(apiUrl("/api/vault-meta"), {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeader() },
       body: JSON.stringify(meta),
     });
     if (!res.ok) {
@@ -200,5 +206,6 @@
     save,
     loadMeta,
     saveMeta,
+    setApiToken,
   };
 })();

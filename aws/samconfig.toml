@@ -2,6 +2,7 @@ version = 0.1
 
 [default.global.parameters]
 stack_name = "pmanager"
+region = "ca-central-1"
 
 [default.build.parameters]
 cached = true
@@ -12,4 +13,6 @@ capabilities           = "CAPABILITY_IAM"
 confirm_changeset      = true
 resolve_s3             = true
 region                 = "ca-central-1"
-parameter_overrides    = "AllowedOrigin=*"
+parameter_overrides    = "AllowedOrigin=\"*\" AllowedIPs=\"unused\" ApiToken=\"0561cba06ccb6f0871b1eaebba1d142c7252064a5095b8eb76fa4c4803e1ea1a\""
+s3_prefix = "pmanager"
+image_repositories = []

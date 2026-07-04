@@ -12,7 +12,15 @@
     <header>
       <div class="topbar">
         <h1>pManager</h1>
-        <button id="theme-toggle" type="button" class="theme-toggle">Dark mode</button>
+        <label id="theme-toggle" class="theme-toggle" title="Switch to dark mode" aria-label="Toggle dark mode">
+          <input type="checkbox" class="theme-toggle-check">
+          <span class="theme-toggle-track">
+            <span class="theme-toggle-thumb">
+              <span class="toggle-sun">&#x2600;</span>
+              <span class="toggle-moon">&#x263E;</span>
+            </span>
+          </span>
+        </label>
       </div>
       <p class="subtitle">Your master password never leaves memory. Session expires in 5 minutes.</p>
     </header>
@@ -42,7 +50,7 @@
         <div class="session">
           <span>Session:</span>
           <strong id="countdown">05:00</strong>
-          <button id="lock-btn" type="button">Lock</button>
+          <button id="lock-btn" type="button" class="danger">Lock</button>
         </div>
       </div>
 

@@ -735,7 +735,7 @@
   }
   function resetAddForm() {
     els.addName.value = "";
-    els.addUnique.value = "";
+    els.addUnique.value = generateUnique();
     els.addLength.value = "20";
     els.addNote.value = "";
     els.addCategory.value = currentCategory(); // keep sync with active tab
@@ -752,6 +752,8 @@
     els.addSiteBtn.textContent = "− Close Add Form";
     els.addSiteBtn.classList.remove("primary");
     syncAddForm();
+    // Pre-fill unique if empty (first open or after a reset).
+    if (!els.addUnique.value) els.addUnique.value = generateUnique();
     // Focus name for quick entry; scroll into view for narrow windows.
     els.addCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
     setTimeout(() => els.addName.focus(), 60);
@@ -813,12 +815,20 @@
     hideUnlockError();
     setUnlockBusy(true, "Deriving key (Argon2id, this takes a moment)…");
     try {
+      // Derive the API Bearer token from the master password (fast, PBKDF2)
+      // and register it so all subsequent API calls are authenticated.
+      const apiToken = await window.PMDerive.deriveApiToken(pwd);
+      window.PMStore.setApiToken(apiToken);
+
       let meta;
       try {
         meta = await window.PMStore.loadMeta();
       } catch (err) {
         setUnlockBusy(false);
-        showUnlockError(`Cannot reach API: ${err.message}`);
+        const msg = /403/.test(err.message)
+          ? "Wrong master password."
+          : `Cannot reach API: ${err.message}`;
+        showUnlockError(msg);
         return;
       }
       let bannerKind, bannerMsg, derivedKey;
