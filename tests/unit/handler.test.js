@@ -221,6 +221,38 @@ describe("PUT /api/sites", () => {
     expect(JSON.parse(res.body)[0].note).toBe(shortNote);
   });
 
+  test("preserves username when provided", async () => {
+    mockSend.mockResolvedValueOnce({});
+    const res = await handler.handler(evt("PUT", "/api/sites",
+      [{ name: "U", unique: "u-u", length: 20, classes: { lower: true }, username: "user@example.com" }]
+    ));
+    expect(JSON.parse(res.body)[0].username).toBe("user@example.com");
+  });
+
+  test("defaults username to empty string when absent", async () => {
+    mockSend.mockResolvedValueOnce({});
+    const res = await handler.handler(evt("PUT", "/api/sites",
+      [{ name: "U", unique: "u-u", length: 20, classes: { lower: true } }]
+    ));
+    expect(JSON.parse(res.body)[0].username).toBe("");
+  });
+
+  test("preserves siteUrl when provided", async () => {
+    mockSend.mockResolvedValueOnce({});
+    const res = await handler.handler(evt("PUT", "/api/sites",
+      [{ name: "S", unique: "s-u", length: 20, classes: { lower: true }, siteUrl: "https://example.com" }]
+    ));
+    expect(JSON.parse(res.body)[0].siteUrl).toBe("https://example.com");
+  });
+
+  test("defaults siteUrl to empty string when absent", async () => {
+    mockSend.mockResolvedValueOnce({});
+    const res = await handler.handler(evt("PUT", "/api/sites",
+      [{ name: "S", unique: "s-u", length: 20, classes: { lower: true } }]
+    ));
+    expect(JSON.parse(res.body)[0].siteUrl).toBe("");
+  });
+
   test("deduplicates history entries and limits to 5", async () => {
     mockSend.mockResolvedValueOnce({});
     const input = [{

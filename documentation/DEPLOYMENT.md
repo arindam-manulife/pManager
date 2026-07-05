@@ -296,7 +296,8 @@ It does:
 2. `sam deploy --no-confirm-changeset`
 3. Reads S3 bucket names from CloudFormation stack outputs
 4. `aws s3 sync` for both Manager and Vault with no-cache headers
-5. Prints the live URLs
+5. **CloudFront cache invalidation** for both distributions (`/*`)
+6. Prints the live URLs
 
 Run from the **repo root** at any time to redeploy everything.
 

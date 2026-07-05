@@ -137,6 +137,8 @@ RUN("pManager E2E Tests", () => {
         length: 20,
         classes: { lower: true, upper: true, number: true, symbol: false },
         note: "Created by automated e2e test",
+        username: "e2e-user@example.com",
+        siteUrl: "https://e2e-test.example.com",
       }];
       const res = await apiFetch("PUT", "/api/sites", input);
       assert.equal(res.status, 200);
@@ -147,6 +149,8 @@ RUN("pManager E2E Tests", () => {
       assert.equal(saved[0].unique, "e2e-test-unique-abc123");
       assert.equal(saved[0].length, 20);
       assert.equal(saved[0].category, "Testing");
+      assert.equal(saved[0].username, "e2e-user@example.com");
+      assert.equal(saved[0].siteUrl, "https://e2e-test.example.com");
     });
 
     test("PUT then GET is consistent", async () => {
@@ -156,6 +160,8 @@ RUN("pManager E2E Tests", () => {
         category: "Test",
         length: 16,
         classes: { lower: true, upper: false, number: true, symbol: false },
+        username: "check-user",
+        siteUrl: "https://consistency.example.com",
       }];
       await apiFetch("PUT", "/api/sites", input);
       const res = await apiFetch("GET", "/api/sites");
@@ -164,6 +170,8 @@ RUN("pManager E2E Tests", () => {
       assert.equal(fetched.length, 1);
       assert.equal(fetched[0].name, "Consistency Check");
       assert.equal(fetched[0].length, 16);
+      assert.equal(fetched[0].username, "check-user");
+      assert.equal(fetched[0].siteUrl, "https://consistency.example.com");
     });
 
     test("PUT /api/sites with invalid JSON body → 400", async () => {

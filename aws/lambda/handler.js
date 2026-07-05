@@ -61,6 +61,9 @@ function normalize(raw) {
   let note = String(raw.note == null ? "" : raw.note);
   if (note.length > 500) note = note.slice(0, 500);
 
+  const username = String(raw.username == null ? "" : raw.username).trim();
+  const siteUrl  = String(raw.siteUrl  == null ? "" : raw.siteUrl).trim();
+
   const uniqueCreatedAt = raw.uniqueCreatedAt ? String(raw.uniqueCreatedAt) : null;
   const lastModifiedAt  = raw.lastModifiedAt  ? String(raw.lastModifiedAt)  : null;
 
@@ -82,7 +85,7 @@ function normalize(raw) {
     if (history.length >= HIST_MAX) break;
   }
 
-  return { name, category, unique, length, classes, note, uniqueCreatedAt, lastModifiedAt, history };
+  return { name, category, unique, length, classes, note, username, siteUrl, uniqueCreatedAt, lastModifiedAt, history };
 }
 
 // ---- DynamoDB helpers -----------------------------------------------------

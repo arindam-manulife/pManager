@@ -37,6 +37,7 @@
           spellcheck="false"
           placeholder="Enter your master password"
         />
+        <button type="button" id="clear-master-btn" class="icon-btn" title="Clear password">✕</button>
       </div>
       <button id="unlock-btn" class="primary">Unlock session</button>
       <p id="unlock-status" class="hint" hidden></p>
@@ -71,6 +72,15 @@
       <div id="site-note" class="site-note" hidden></div>
 
       <div class="output" hidden id="output-block">
+        <div id="username-block" hidden>
+          <label>Username</label>
+          <div class="row">
+            <input type="text" id="username-val" readonly />
+            <button id="copy-username-btn" type="button">Copy</button>
+          </div>
+          <p id="copy-username-status" class="hint"></p>
+        </div>
+
         <label for="generated">Generated password</label>
         <div class="row">
           <input type="password" id="generated" readonly />
@@ -79,6 +89,10 @@
         </div>
         <p id="unique-created" class="hint"></p>
         <p id="copy-status" class="hint"></p>
+
+        <div class="row" id="open-site-row" hidden>
+          <button id="open-site-btn" type="button" class="primary">↗ Open Site</button>
+        </div>
       </div>
     </section>
 

@@ -45,9 +45,9 @@ tests/
 | Test file | Tests | Runner | AWS calls | Needs deploy |
 |---|---|---|---|---|
 | `unit/authorizer.test.js` | 11 | jest | None | No |
-| `unit/handler.test.js` | 29 | jest | None (mocked) | No |
+| `unit/handler.test.js` | 33 | jest | None (mocked) | No |
 | `unit/gen-token.test.js` | 11 | jest | None | No |
-| `e2e/api.test.js` | 25 | jest | Real HTTPS | Yes |
+| `e2e/api.test.js` | 27 | jest | Real HTTPS | Yes |
 
 All four files run under **jest**. An HTML dashboard is written to `tests/reports/test-report.html` after every run.
 
@@ -98,7 +98,7 @@ PASS unit/handler.test.js
 PASS unit/gen-token.test.js
   ...11 tests...
 
-Tests: 51 passed, 51 total
+Tests: 55 passed, 55 total
 
 📦 report is created on: tests/reports/test-report.html
 ```
@@ -222,7 +222,7 @@ PASS e2e/api.test.js
   pManager E2E Tests [skipped — set API_TOKEN env var to run]
     ○ skipped
 
-Tests: 51 passed, 25 skipped, 76 total
+Tests: 55 passed, 27 skipped, 82 total
 ```
 
 Skipped tests appear as **pending** (grey) in the HTML dashboard — the suite still passes.

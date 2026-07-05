@@ -63,6 +63,12 @@
     let note = String(raw.note == null ? "" : raw.note);
     if (note.length > 500) note = note.slice(0, 500);
 
+    // username: optional account username / email for this site.
+    const username = String(raw.username == null ? "" : raw.username).trim();
+
+    // siteUrl: optional URL to open the site directly.
+    const siteUrl = String(raw.siteUrl == null ? "" : raw.siteUrl).trim();
+
     // uniqueCreatedAt: ISO-8601 timestamp of when the current `unique` became active.
     // null for legacy entries where we don't know.
     const uniqueCreatedAt = raw.uniqueCreatedAt ? String(raw.uniqueCreatedAt) : null;
@@ -96,7 +102,7 @@
       if (history.length >= HIST_MAX) break;
     }
 
-    return { name, category, unique, length, classes, note, uniqueCreatedAt, lastModifiedAt, history };
+    return { name, category, unique, length, classes, note, username, siteUrl, uniqueCreatedAt, lastModifiedAt, history };
   }
 
   function readCache() {

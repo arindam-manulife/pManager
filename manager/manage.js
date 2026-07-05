@@ -25,6 +25,8 @@
     addCategory:   $("add-category"),
     addUnique:     $("add-unique"),
     addLength:     $("add-length"),
+    addUsername:   $("add-username"),
+    addSiteUrl:    $("add-siteurl"),
     addNote:       $("add-note"),
     addError:      $("add-error"),
     addHeading:    $("add-heading"),
@@ -51,6 +53,8 @@
     editCategory:  $("edit-category"),
     editUnique:    $("edit-unique"),
     editLength:    $("edit-length"),
+    editUsername:  $("edit-username"),
+    editSiteUrl:   $("edit-siteurl"),
     editNote:      $("edit-note"),
     editError:     $("edit-error"),
     editHistMenu:  $("edit-history-menu"),
@@ -237,6 +241,19 @@
     if (site.note) {
       tr.querySelector(".site-name-cell").title = site.note; // hover to preview note
     }
+    const usernameCell = tr.querySelector(".site-username-cell");
+    usernameCell.textContent = site.username || "";
+    const urlCell = tr.querySelector(".site-url-cell");
+    if (site.siteUrl) {
+      const a = document.createElement("a");
+      a.href = site.siteUrl;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "↗";
+      a.title = site.siteUrl;
+      a.className = "site-url-link";
+      urlCell.appendChild(a);
+    }
     const modCell = tr.querySelector(".site-modified");
     if (site.lastModifiedAt) {
       modCell.textContent = formatHistoryTime(site.lastModifiedAt);
@@ -344,6 +361,8 @@
       category: els.editCategory.value,
       unique:   els.editUnique.value,
       length:   els.editLength.value,
+      username: els.editUsername.value,
+      siteUrl:  els.editSiteUrl.value,
       note:     els.editNote.value,
       classes,
     };
@@ -684,6 +703,8 @@
       category: els.addCategory.value,
       unique:   els.addUnique.value,
       length:   els.addLength.value,
+      username: els.addUsername.value,
+      siteUrl:  els.addSiteUrl.value,
       note:     els.addNote.value,
       classes,
     };
@@ -737,6 +758,8 @@
     els.addName.value = "";
     els.addUnique.value = generateUnique();
     els.addLength.value = "20";
+    els.addUsername.value = "";
+    els.addSiteUrl.value = "";
     els.addNote.value = "";
     els.addCategory.value = currentCategory(); // keep sync with active tab
     for (const k of window.PMStore.CLASS_KEYS) {
@@ -983,8 +1006,17 @@
     els.master.addEventListener("keydown", (e) => {
       if (e.key === "Enter") unlock();
     });
-    els.lockBtn.addEventListener("click", () => lock());
 
+    const clearMasterBtn = document.getElementById("clear-master-btn");
+    if (clearMasterBtn) {
+      clearMasterBtn.addEventListener("click", () => {
+        els.master.value = "";
+        hideUnlockError();
+        els.master.focus();
+      });
+    }
+
+    els.lockBtn.addEventListener("click", () => lock());
     els.addForm.addEventListener("submit", onAdd);
     els.addSiteBtn.addEventListener("click", toggleAddCard);
     els.addCancel.addEventListener("click", hideAddCard);

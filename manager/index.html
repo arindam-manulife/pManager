@@ -47,6 +47,7 @@
           spellcheck="false"
           placeholder="Enter your master password"
         />
+        <button type="button" id="clear-master-btn" class="icon-btn" title="Clear password">✕</button>
       </div>
       <button id="unlock-btn" class="primary">Unlock session</button>
       <p id="unlock-status" class="hint" hidden></p>
@@ -96,6 +97,17 @@
           </div>
         </div>
 
+        <div class="grid grid-2">
+          <div>
+            <label for="add-username">Username <span class="muted-small">(optional)</span></label>
+            <input id="add-username" type="text" placeholder="e.g. user@example.com" />
+          </div>
+          <div>
+            <label for="add-siteurl">Site URL <span class="muted-small">(optional)</span></label>
+            <input id="add-siteurl" type="url" placeholder="e.g. https://example.com" />
+          </div>
+        </div>
+
         <fieldset class="classes">
           <legend>Character classes</legend>
           <label class="check"><input type="checkbox" data-cls="lower"  checked /> lowercase (a–z)</label>
@@ -142,6 +154,8 @@
   <template id="site-row-template">
     <tr class="site-row">
       <td class="site-name-cell"></td>
+      <td class="site-username-cell"></td>
+      <td class="site-url-cell"></td>
       <td class="site-modified"></td>
       <td class="site-actions">
         <button type="button" class="edit-btn" data-action="edit">Edit</button>
@@ -195,6 +209,17 @@
           <div>
             <label for="edit-length">Length</label>
             <input id="edit-length" type="number" min="4" max="64" />
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div>
+            <label for="edit-username">Username <span class="muted-small">(optional)</span></label>
+            <input id="edit-username" type="text" placeholder="e.g. user@example.com" />
+          </div>
+          <div>
+            <label for="edit-siteurl">Site URL <span class="muted-small">(optional)</span></label>
+            <input id="edit-siteurl" type="url" placeholder="e.g. https://example.com" />
           </div>
         </div>
 

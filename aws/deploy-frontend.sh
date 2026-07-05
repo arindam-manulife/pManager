@@ -41,6 +41,25 @@ aws s3 sync "$REPO_ROOT/vault/" "s3://$VAULT_BUCKET" \
   --exclude ".DS_Store" \
   --cache-control "no-cache, no-store, must-revalidate"
 
+echo "==> Fetching CloudFront distribution IDs..."
+MANAGER_CF=$(aws cloudformation describe-stacks \
+  --stack-name "$STACK_NAME" \
+  --query "Stacks[0].Outputs[?OutputKey=='ManagerCFDistribution'].OutputValue" \
+  --output text 2>/dev/null || echo "")
+
+VAULT_CF=$(aws cloudformation describe-stacks \
+  --stack-name "$STACK_NAME" \
+  --query "Stacks[0].Outputs[?OutputKey=='VaultCFDistribution'].OutputValue" \
+  --output text 2>/dev/null || echo "")
+
+# Fall back to known distribution IDs if not in stack outputs.
+MANAGER_CF="${MANAGER_CF:-E3LG7FGZ7FL6RX}"
+VAULT_CF="${VAULT_CF:-E3SQ153SFVDDIK}"
+
+echo "==> Invalidating CloudFront cache (Manager: $MANAGER_CF, Vault: $VAULT_CF)..."
+aws cloudfront create-invalidation --distribution-id "$MANAGER_CF" --paths "/*" --output text
+aws cloudfront create-invalidation --distribution-id "$VAULT_CF"   --paths "/*" --output text
+
 echo ""
 echo "==> Done! URLs:"
 aws cloudformation describe-stacks \

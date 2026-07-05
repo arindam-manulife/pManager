@@ -403,6 +403,22 @@ button.danger:hover {
   color: var(--text);
   font-weight: 500;
 }
+.site-username-cell {
+  color: var(--muted);
+  font-size: 13px;
+}
+.site-url-cell {
+  width: 32px;
+  text-align: center;
+}
+.site-url-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 16px;
+}
+.site-url-link:hover {
+  color: var(--accent-2);
+}
 .site-modified {
   color: var(--muted);
   font-size: 12px;

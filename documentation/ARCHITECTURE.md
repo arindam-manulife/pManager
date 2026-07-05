@@ -165,6 +165,8 @@ erDiagram
         int    length          "Password length (4–64)"
         object classes         "{ lower, upper, number, symbol }"
         string note            "Optional free-form note (max 500 chars)"
+        string username        "Optional account username / email"
+        string siteUrl         "Optional URL to open the site directly"
         string uniqueCreatedAt "ISO-8601 — when current unique was set"
         string lastModifiedAt  "ISO-8601 — last field change"
         array  history         "Last 5 previous unique values"

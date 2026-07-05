@@ -32,6 +32,12 @@
     toggleGen:     $("toggle-generated"),
     copyBtn:       $("copy-btn"),
     copyStatus:    $("copy-status"),
+    usernameBlock: $("username-block"),
+    usernameVal:   $("username-val"),
+    copyUsernameBtn: $("copy-username-btn"),
+    copyUsernameStatus: $("copy-username-status"),
+    openSiteRow:   $("open-site-row"),
+    openSiteBtn:   $("open-site-btn"),
     dataStatus:    $("data-status"),
     siteNote:      $("site-note"),
     uniqueCreated: $("unique-created"),
@@ -247,6 +253,8 @@
     els.generated.type = "password";
     els.outputBlock.hidden = true;
     els.copyStatus.textContent = "";
+    if (els.usernameBlock) { els.usernameBlock.hidden = true; els.usernameVal.value = ""; }
+    if (els.openSiteRow) els.openSiteRow.hidden = true;
     if (els.uniqueCreated) els.uniqueCreated.textContent = "";
     hideBanner();
 
@@ -335,6 +343,25 @@
       els.uniqueCreated.textContent = site.uniqueCreatedAt
         ? `Password created: ${formatFullDate(site.uniqueCreatedAt)}`
         : `Password created: unknown (regenerate to stamp it)`;
+
+      // Username
+      if (site.username) {
+        els.usernameVal.value = site.username;
+        els.usernameBlock.hidden = false;
+        els.copyUsernameStatus.textContent = "";
+      } else {
+        els.usernameVal.value = "";
+        els.usernameBlock.hidden = true;
+      }
+
+      // Open Site
+      if (site.siteUrl) {
+        els.openSiteBtn.dataset.url = site.siteUrl;
+        els.openSiteRow.hidden = false;
+      } else {
+        els.openSiteBtn.dataset.url = "";
+        els.openSiteRow.hidden = true;
+      }
     } catch (err) {
       els.outputBlock.hidden = false;
       els.generated.value = "";
@@ -374,6 +401,31 @@
     }
   }
 
+  async function copyUsername() {
+    const val = els.usernameVal.value;
+    if (!val) return;
+    try {
+      await navigator.clipboard.writeText(val);
+      els.copyUsernameStatus.textContent = "Username copied.";
+      setTimeout(() => {
+        if (els.copyUsernameStatus.textContent === "Username copied.") {
+          els.copyUsernameStatus.textContent = "";
+        }
+      }, 3000);
+    } catch (_) {
+      els.usernameVal.select();
+      els.copyUsernameStatus.textContent = "Copy blocked by browser — selected instead.";
+    }
+  }
+
+  function openSite() {
+    let url = els.openSiteBtn.dataset.url;
+    if (!url) return;
+    // Ensure an absolute URL — add https:// if the user omitted the protocol.
+    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   function toggleVisibility(input) {
     input.type = input.type === "password" ? "text" : "password";
   }
@@ -404,6 +456,15 @@
       if (e.key === "Enter") unlock();
     });
 
+    const clearMasterBtn = document.getElementById("clear-master-btn");
+    if (clearMasterBtn) {
+      clearMasterBtn.addEventListener("click", () => {
+        els.master.value = "";
+        hideUnlockError();
+        els.master.focus();
+      });
+    }
+
     els.lockBtn.addEventListener("click", () => lock());
     els.generateBtn.addEventListener("click", generate);
     els.categorySelect.addEventListener("change", () => {
@@ -417,6 +478,8 @@
     });
     els.toggleGen.addEventListener("click", () => toggleVisibility(els.generated));
     els.copyBtn.addEventListener("click", copyGenerated);
+    els.copyUsernameBtn.addEventListener("click", copyUsername);
+    els.openSiteBtn.addEventListener("click", openSite);
 
     // Lock on tab close / reload for good measure.
     window.addEventListener("beforeunload", () => lock());
