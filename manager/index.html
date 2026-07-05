@@ -93,18 +93,18 @@
           </div>
           <div>
             <label for="add-length">Length</label>
-            <input id="add-length" type="number" min="4" max="64" value="20" />
+            <input id="add-length" type="number" min="8" max="32" value="20" />
           </div>
         </div>
 
         <div class="grid grid-2">
           <div>
-            <label for="add-username">Username <span class="muted-small">(optional)</span></label>
-            <input id="add-username" type="text" placeholder="e.g. user@example.com" />
+            <label for="add-username">Username</label>
+            <input id="add-username" type="text" placeholder="e.g. user@example.com" required />
           </div>
           <div>
-            <label for="add-siteurl">Site URL <span class="muted-small">(optional)</span></label>
-            <input id="add-siteurl" type="url" placeholder="e.g. https://example.com" />
+            <label for="add-siteurl">Site URL</label>
+            <input id="add-siteurl" type="url" placeholder="e.g. https://example.com" required />
           </div>
         </div>
 
@@ -113,7 +113,7 @@
           <label class="check"><input type="checkbox" data-cls="lower"  checked /> lowercase (a–z)</label>
           <label class="check"><input type="checkbox" data-cls="upper"  checked /> UPPERCASE (A–Z)</label>
           <label class="check"><input type="checkbox" data-cls="number" checked /> numbers (0–9)</label>
-          <label class="check"><input type="checkbox" data-cls="symbol" checked /> symbols (!@#…)</label>
+          <label class="check"><input type="checkbox" data-cls="symbol" checked /> Symbols(!@#$)</label>
         </fieldset>
 
         <div class="note-field">
@@ -154,7 +154,6 @@
   <template id="site-row-template">
     <tr class="site-row">
       <td class="site-name-cell"></td>
-      <td class="site-username-cell"></td>
       <td class="site-url-cell"></td>
       <td class="site-modified"></td>
       <td class="site-actions">
@@ -208,18 +207,18 @@
           </div>
           <div>
             <label for="edit-length">Length</label>
-            <input id="edit-length" type="number" min="4" max="64" />
+            <input id="edit-length" type="number" min="8" max="32" />
           </div>
         </div>
 
         <div class="grid grid-2">
           <div>
-            <label for="edit-username">Username <span class="muted-small">(optional)</span></label>
-            <input id="edit-username" type="text" placeholder="e.g. user@example.com" />
+            <label for="edit-username">Username</label>
+            <input id="edit-username" type="text" placeholder="e.g. user@example.com" required />
           </div>
           <div>
-            <label for="edit-siteurl">Site URL <span class="muted-small">(optional)</span></label>
-            <input id="edit-siteurl" type="url" placeholder="e.g. https://example.com" />
+            <label for="edit-siteurl">Site URL</label>
+            <input id="edit-siteurl" type="url" placeholder="e.g. https://example.com" required />
           </div>
         </div>
 
@@ -228,7 +227,7 @@
           <label class="check"><input type="checkbox" data-edit-cls="lower"  /> lowercase (a–z)</label>
           <label class="check"><input type="checkbox" data-edit-cls="upper"  /> UPPERCASE (A–Z)</label>
           <label class="check"><input type="checkbox" data-edit-cls="number" /> numbers (0–9)</label>
-          <label class="check"><input type="checkbox" data-edit-cls="symbol" /> symbols (!@#…)</label>
+          <label class="check"><input type="checkbox" data-edit-cls="symbol" /> Symbols(!@#$)</label>
         </fieldset>
 
         <div class="note-field">
@@ -258,10 +257,10 @@
     </div>
   </div>
 
-  <script src="config.js"></script>
-  <script src="storage.js"></script>
-  <script src="argon2.umd.min.js"></script>
-  <script src="derive.js"></script>
-  <script src="manage.js"></script>
+  <script src="config.js?v=2"></script>
+  <script src="storage.js?v=2"></script>
+  <script src="argon2.umd.min.js?v=2"></script>
+  <script src="derive.js?v=2"></script>
+  <script src="manage.js?v=3"></script>
 </body>
 </html>

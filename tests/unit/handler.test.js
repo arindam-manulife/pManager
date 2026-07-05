@@ -163,20 +163,20 @@ describe("PUT /api/sites", () => {
     expect(JSON.parse(res.body)).toEqual([]);
   });
 
-  test("clamps length below 4 up to 4", async () => {
+  test("clamps length below 8 up to 8", async () => {
     mockSend.mockResolvedValueOnce({});
     const res = await handler.handler(evt("PUT", "/api/sites",
       [{ name: "S", unique: "s-u", length: 1, classes: { lower: true } }]
     ));
-    expect(JSON.parse(res.body)[0].length).toBe(4);
+    expect(JSON.parse(res.body)[0].length).toBe(8);
   });
 
-  test("clamps length above 64 down to 64", async () => {
+  test("clamps length above 32 down to 32", async () => {
     mockSend.mockResolvedValueOnce({});
     const res = await handler.handler(evt("PUT", "/api/sites",
       [{ name: "L", unique: "l-u", length: 999, classes: { lower: true } }]
     ));
-    expect(JSON.parse(res.body)[0].length).toBe(64);
+    expect(JSON.parse(res.body)[0].length).toBe(32);
   });
 
   test("defaults length to 20 when not a finite number", async () => {

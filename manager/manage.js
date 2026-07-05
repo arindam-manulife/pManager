@@ -241,8 +241,6 @@
     if (site.note) {
       tr.querySelector(".site-name-cell").title = site.note; // hover to preview note
     }
-    const usernameCell = tr.querySelector(".site-username-cell");
-    usernameCell.textContent = site.username || "";
     const urlCell = tr.querySelector(".site-url-cell");
     if (site.siteUrl) {
       const a = document.createElement("a");
@@ -328,6 +326,8 @@
     els.editName.value = site.name;
     els.editUnique.value = site.unique;
     els.editLength.value = site.length;
+    els.editUsername.value = site.username || "";
+    els.editSiteUrl.value = site.siteUrl || "";
     els.editNote.value = site.note || "";
     for (const k of window.PMStore.CLASS_KEYS) {
       els.editModal.querySelector(`[data-edit-cls="${k}"]`).checked = Boolean(site.classes[k]);
@@ -460,8 +460,20 @@
       showEditError("Name and unique string are required.");
       return null;
     }
+    if (!normalized.username) {
+      showEditError("Username is required.");
+      return null;
+    }
+    if (!normalized.siteUrl) {
+      showEditError("Site URL is required.");
+      return null;
+    }
     if (Object.values(normalized.classes).every((v) => !v)) {
       showEditError("Enable at least one character class.");
+      return null;
+    }
+    if (normalized.length < 8 || normalized.length > 32) {
+      showEditError("Password length must be between 8 and 32.");
       return null;
     }
     if (isDuplicateName(normalized.name, editingIndex)) {
@@ -713,15 +725,29 @@
       showAddError("Name and unique string are required.");
       return;
     }
+    if (!normalized.username) {
+      showAddError("Username is required.");
+      return;
+    }
+    if (!normalized.siteUrl) {
+      showAddError("Site URL is required.");
+      return;
+    }
     if (Object.values(normalized.classes).every((v) => !v)) {
       showAddError("Enable at least one character class.");
+      return;
+    }
+    if (normalized.length < 8 || normalized.length > 32) {
+      showAddError("Password length must be between 8 and 32.");
       return;
     }
     if (isDuplicateName(normalized.name, -1)) {
       showAddError("A site with this name already exists.");
       return;
     }
-    normalized.lastModifiedAt = new Date().toISOString();
+    const nowIso = new Date().toISOString();
+    normalized.lastModifiedAt = nowIso;
+    if (!normalized.uniqueCreatedAt) normalized.uniqueCreatedAt = nowIso;
 
     const next = sites.concat(normalized);
     const ok = await persist(next);
@@ -777,6 +803,8 @@
     syncAddForm();
     // Pre-fill unique if empty (first open or after a reset).
     if (!els.addUnique.value) els.addUnique.value = generateUnique();
+    // Always reset length to default on open.
+    els.addLength.value = "20";
     // Focus name for quick entry; scroll into view for narrow windows.
     els.addCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
     setTimeout(() => els.addName.focus(), 60);

@@ -6,7 +6,7 @@
     lower:  "abcdefghijklmnopqrstuvwxyz",
     upper:  "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
     number: "0123456789",
-    symbol: "!@#$%^&*?+-=_",
+    symbol: "!@#$",
   };
 
   // Argon2id defaults: OWASP 2023 interactive-login profile.
@@ -163,6 +163,17 @@
     return ["lower", "upper", "number", "symbol"].filter((k) => classes[k]);
   }
 
+  // Returns true if placing b next to a would be repetitive or sequential.
+  function isViolation(a, b) {
+    if (a === b) return true;
+    const diff = Math.abs(a.charCodeAt(0) - b.charCodeAt(0));
+    if (diff !== 1) return false;
+    const lo = c => c >= "a" && c <= "z";
+    const up = c => c >= "A" && c <= "Z";
+    const dg = c => c >= "0" && c <= "9";
+    return (lo(a) && lo(b)) || (up(a) && up(b)) || (dg(a) && dg(b));
+  }
+
   // Derive a deterministic per-site password from the already-derived
   // master key K. Cheap (< 1 ms) — the expensive Argon2 work happened at unlock.
   async function derivePassword(masterKey, site) {
@@ -172,28 +183,56 @@
       throw new Error("At least one character class must be enabled.");
     }
 
+    const requestedLength = site.length != null ? site.length : 20;
+    const length = Math.max(active.length, Math.max(8, Math.min(32, requestedLength)));
+
     const pool = buildPool(classes);
-    const length = Math.max(active.length, Math.max(4, Math.min(64, site.length || 20)));
-    const needed = length + active.length * 2 + 4;
+    // Extra bytes buffer to handle sequential/repetitive rejection
+    const needed = (length + active.length * 2 + 4) * 8;
     const stream = await deriveSiteBytes(masterKey, site.unique, needed);
+    let cursor = 0;
+
+    function pickFrom(fromPool, prev, next) {
+      for (let t = 0; t < fromPool.length * 4; t++) {
+        const c = fromPool[stream[cursor++ % stream.length] % fromPool.length];
+        if ((!prev || !isViolation(c, prev)) && (!next || !isViolation(c, next))) return c;
+      }
+      for (const c of fromPool) {
+        if ((!prev || !isViolation(c, prev)) && (!next || !isViolation(c, next))) return c;
+      }
+      return fromPool[0];
+    }
 
     const chars = new Array(length);
     for (let i = 0; i < length; i++) {
-      chars[i] = pool[stream[i] % pool.length];
+      chars[i] = pickFrom(pool, i > 0 ? chars[i - 1] : null, null);
     }
 
-    let cursor = length;
     const used = new Set();
     for (const cls of active) {
       const classPool = POOLS[cls];
-      let pos = stream[cursor++] % length;
+      let pos = stream[cursor++ % stream.length] % length;
       let tries = 0;
       while (used.has(pos) && used.size < length && tries < length) {
         pos = (pos + 1) % length;
         tries++;
       }
       used.add(pos);
-      chars[pos] = classPool[stream[cursor++] % classPool.length];
+      const prev = pos > 0 ? chars[pos - 1] : null;
+      const next = pos < length - 1 ? chars[pos + 1] : null;
+      chars[pos] = pickFrom(classPool, prev, next);
+    }
+
+    // Verification: if any active class still has no representative, force-place one.
+    for (const cls of active) {
+      const classPool = POOLS[cls];
+      if (chars.some(c => classPool.includes(c))) continue;
+      for (let pos = 0; pos < length; pos++) {
+        const prev = pos > 0 ? chars[pos - 1] : null;
+        const next = pos < length - 1 ? chars[pos + 1] : null;
+        chars[pos] = pickFrom(classPool, prev, next);
+        break;
+      }
     }
 
     return chars.join("");

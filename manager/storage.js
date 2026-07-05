@@ -42,7 +42,7 @@
 
     let length = Number(raw.length);
     if (!Number.isFinite(length)) length = 20;
-    length = Math.max(4, Math.min(64, Math.round(length)));
+    length = Math.max(8, Math.min(32, Math.round(length)));
 
     let classes;
     if (raw.classes && typeof raw.classes === "object") {

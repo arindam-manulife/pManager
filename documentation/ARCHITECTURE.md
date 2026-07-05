@@ -133,6 +133,17 @@ flowchart LR
 
 **Key property:** The same `(master password, unique string)` pair always produces the same site password. Nothing is stored — the password vanishes when the session locks.
 
+**Password composition rules (enforced at generation time):**
+
+| Rule | Detail |
+|---|---|
+| **Length** | 8–32 characters (set per-site in the Manager) |
+| **Character classes** | Lowercase · Uppercase · Numbers · Symbols — each toggled per site |
+| **Symbol pool** | `!@#$` |
+| **Minimum class coverage** | Every enabled class contributes ≥ 1 character to the final password |
+| **No repetitive characters** | A character cannot appear consecutively (e.g. `aa`, `11`) |
+| **No sequential characters** | Adjacent characters in the same class cannot differ by 1 code point (e.g. `ab`, `78`, `YZ`) |
+
 ---
 
 ## Data Model
@@ -162,7 +173,7 @@ erDiagram
         string name
         string category
         string unique          "Unique string — the KDF salt per site"
-        int    length          "Password length (4–64)"
+        int    length          "Password length (8–32)"
         object classes         "{ lower, upper, number, symbol }"
         string note            "Optional free-form note (max 500 chars)"
         string username        "Optional account username / email"

@@ -10,7 +10,7 @@ CONFIG="/Users/saarind/Documents/GitHub/pManager/aws/samconfig.toml"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "==> Building SAM application..."
-sam build --template-file "$TEMPLATE"
+sam build --template-file "$TEMPLATE" --no-cached
 
 echo "==> Deploying stack ($STACK_NAME)..."
 sam deploy \

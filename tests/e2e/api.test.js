@@ -200,7 +200,7 @@ RUN("pManager E2E Tests", () => {
       assert.equal(saved[0].name, "Valid");
     });
 
-    test("PUT clamps length: 1 → 4, 999 → 64", async () => {
+    test("PUT clamps length: 1 → 8, 999 → 32", async () => {
       const input = [
         { name: "Short", unique: "sh-u", length: 1,   classes: { lower: true } },
         { name: "Long",  unique: "lg-u", length: 999, classes: { lower: true } },
@@ -208,8 +208,8 @@ RUN("pManager E2E Tests", () => {
       const res = await apiFetch("PUT", "/api/sites", input);
       assert.equal(res.status, 200);
       const [s, l] = await res.json();
-      assert.equal(s.length, 4);
-      assert.equal(l.length, 64);
+      assert.equal(s.length, 8);
+      assert.equal(l.length, 32);
     });
 
     test("PUT defaults to lower=true when all classes are disabled", async () => {

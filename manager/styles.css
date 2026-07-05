@@ -403,10 +403,6 @@ button.danger:hover {
   color: var(--text);
   font-weight: 500;
 }
-.site-username-cell {
-  color: var(--muted);
-  font-size: 13px;
-}
 .site-url-cell {
   width: 32px;
   text-align: center;
