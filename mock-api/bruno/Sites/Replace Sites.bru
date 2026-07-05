@@ -7,7 +7,11 @@ meta {
 put {
   url: {{baseUrl}}/api/sites
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{apiToken}}
 }
 
 headers {
@@ -27,6 +31,8 @@ body:json {
         "number": true,
         "symbol": true
       },
+      "username": "user@example.com",
+      "siteUrl": "https://github.com",
       "note": "",
       "uniqueCreatedAt": null,
       "lastModifiedAt": null,

@@ -7,7 +7,11 @@ meta {
 put {
   url: {{baseUrl}}/api/vault-meta
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{apiToken}}
 }
 
 headers {
