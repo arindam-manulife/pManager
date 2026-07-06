@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const SESSION_MS = 5 * 60 * 1000; // 5 minutes
+  const SESSION_MS = 1 * 60 * 1000; // 1 minute
 
   // In-memory only. Never persisted.
   //   masterKey: raw 32-byte Argon2id-derived key. Wiped on lock.

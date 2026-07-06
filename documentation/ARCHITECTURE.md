@@ -285,7 +285,7 @@ Set `apiBase: "http://127.0.0.1:3001"` in `config.js` to use the mock server loc
 | **S3 not public** | CloudFront OAC + sigv4 — S3 buckets have no public access |
 | **DynamoDB at rest** | SSE enabled (AWS-managed key) |
 | **DynamoDB recovery** | Point-in-time recovery — 35-day window |
-| **Session timeout** | 5-minute inactivity lock; master key wiped from memory |
+| **Session timeout** | 1-minute inactivity lock; master key wiped from memory |
 | **No master password stored** | Wiped from DOM immediately after Argon2 derivation |
 
 ---
